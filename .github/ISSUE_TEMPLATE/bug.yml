@@ -1,0 +1,31 @@
+name: Report a problem
+description: Something in inbox-for-human or its Raycast extension didn't work as expected.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Which agent were you using?
+      options:
+        - Claude Code (terminal)
+        - Claude desktop app, Code tab
+        - Codex CLI
+        - ChatGPT desktop app, Codex mode
+        - Something else
+  - type: input
+    id: macos
+    attributes:
+      label: macOS and Raycast versions
+      placeholder: "macOS 26.1, Raycast 2.11"
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: A screenshot helps. Please leave out anything private, such as the names of your files.
