@@ -29,6 +29,7 @@ from enqueue import (  # noqa: E402
     get_archive_path,
     get_queue_path,
     load_queue,
+    lock_queue,
     write_queue_atomic,
 )
 
@@ -51,21 +52,24 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("give --list or --resolve")
 
     queue_path = get_queue_path()
-    queue = load_queue(queue_path)
 
     if args.list:
-        print(json.dumps(queue, ensure_ascii=False, indent=2))
+        print(json.dumps(load_queue(queue_path), ensure_ascii=False, indent=2))
         return 0
 
     wanted = set(args.resolve)
-    resolved = [e for e in queue if isinstance(e, dict) and e.get("id") in wanted]
-    if not resolved:
-        print("No matching queue entries; nothing removed.", file=sys.stderr)
-        return 0
+    # Hold the queue's lock from the read to the write, so an entry another
+    # agent adds meanwhile isn't lost.
+    with lock_queue(queue_path):
+        queue = load_queue(queue_path)
+        resolved = [e for e in queue if isinstance(e, dict) and e.get("id") in wanted]
+        if not resolved:
+            print("No matching queue entries; nothing removed.", file=sys.stderr)
+            return 0
 
-    remaining = [e for e in queue if not (isinstance(e, dict) and e.get("id") in wanted)]
-    append_archive_entries(get_archive_path(queue_path), resolved, args.reason)
-    write_queue_atomic(queue_path, remaining)
+        remaining = [e for e in queue if not (isinstance(e, dict) and e.get("id") in wanted)]
+        append_archive_entries(get_archive_path(queue_path), resolved, args.reason)
+        write_queue_atomic(queue_path, remaining)
 
     for entry in resolved:
         print(f"resolved ({args.reason}): {entry.get('id')} — {entry.get('ask', '')}")

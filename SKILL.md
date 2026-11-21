@@ -3,7 +3,7 @@ name: inbox-for-human
 description: 'Adds a plan, report, draft, or mockup you made to the user''s Inbox for Human, a list in Raycast they open with a hotkey, with what you need from them. Use whenever you ask the user to review, approve or pick from a report, plan, options, or a list, setting or rule you propose (mid-task too, even as one yes/no), they ask to see or review work ("show me what it looks like now", "let me review the plan", "let me review it", "open it for feedback", "show me the options so I can pick one"), you have three or more questions or decisions open for them, or you finish a document or visual deliverable for them. Count the open questions together even across messages; a choice among options counts as one, but a numbered list of proposed changes counts each item, even when asked as one yes/no ("make changes 1–6?", "reply with numbers, all, or none", a 📚 lesson list). Not for a yes/no with nothing to look over, brief chat answers or reference files; show unfinished work only on an explicit preview request.'
 allowed-tools: Bash
 metadata:
-  version: 1.3.0
+  version: 1.3.1
 ---
 
 # inbox-for-human

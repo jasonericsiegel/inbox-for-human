@@ -8,8 +8,9 @@ exists only in the archive, the entry is restored to the active queue with its
 original ``id`` preserved.
 
 Concurrency: holds an exclusive ``fcntl.flock`` on the queue file across the
-read-modify-write-replace cycle. Atomic write uses a writer-unique tmp file
-(``queue.json.{pid}.tmp``) replaced via ``os.replace``.
+read-modify-write-replace cycle (``lock_queue``). Atomic write uses a
+writer-unique tmp file (``queue.json.{pid}.tmp``) replaced via ``os.replace``.
+The Raycast extension takes the same lock before it changes the queue.
 
 This script is part of the public ``inbox-for-human`` Claude Code plugin. The
 companion reader is the Inbox for Human Raycast extension (macOS only).
@@ -27,7 +28,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 from urllib.parse import quote
 
 # ---------------------------------------------------------------------------
@@ -167,6 +168,32 @@ def write_queue_atomic(queue_path: Path, items: list[dict[str, Any]]) -> None:
     os.replace(tmp, queue_path)
 
 
+def lock_queue(queue_path: Path) -> IO[str]:
+    """Open the queue and hold its exclusive ``flock``; close the file to release it.
+
+    Every writer replaces the queue by renaming a tmp file over it, so a writer
+    that waited for the lock can end up holding the lock of a file that is no
+    longer the queue. Then it opens the new file and locks that instead.
+    Creates the queue (``[]``) when it's missing, so there's always a file to lock.
+    """
+    queue_path.parent.mkdir(parents=True, exist_ok=True)
+    while True:
+        if not queue_path.exists():
+            queue_path.write_text("[]\n", encoding="utf-8")
+        try:
+            fp = open(queue_path, "r+", encoding="utf-8")
+        except FileNotFoundError:
+            continue
+        fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+        try:
+            held, current = os.fstat(fp.fileno()), os.stat(queue_path)
+            if (held.st_ino, held.st_dev) == (current.st_ino, current.st_dev):
+                return fp
+        except FileNotFoundError:
+            pass
+        fp.close()
+
+
 def find_archived_entry(archive_path: Path, target_path: str) -> dict[str, Any] | None:
     """Scan the archive in reverse for the most recent full entry matching ``path``.
 
@@ -291,16 +318,10 @@ def upsert_entry(
     with no active match). Active queue is sorted by ``timestamp`` descending
     after the mutation.
     """
-    queue_path.parent.mkdir(parents=True, exist_ok=True)
-    # Touch so we always have a file to lock.
-    if not queue_path.exists():
-        queue_path.write_text("[]\n", encoding="utf-8")
-
     timestamp = datetime.now().astimezone().isoformat()
 
-    # Acquire exclusive lock for the whole read-modify-write-replace.
-    with open(queue_path, "r+", encoding="utf-8") as fp:
-        fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+    # Hold the exclusive lock for the whole read-modify-write-replace.
+    with lock_queue(queue_path) as fp:
         try:
             items = load_queue(queue_path)
 
