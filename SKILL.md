@@ -3,7 +3,7 @@ name: inbox-for-human
 description: 'Adds a plan, report, draft, or mockup you made to the user''s Inbox for Human, a list in Raycast they open with a hotkey, with what you need from them. Use whenever you ask the user to review, approve or pick from a report, plan, options, or a list, setting or rule you propose (mid-task too, even as one yes/no), they ask to see or review work ("show me what it looks like now", "let me review the plan", "let me review it", "open it for feedback", "show me the options so I can pick one"), you have three or more questions or decisions open for them, or you finish a document or visual deliverable for them. Count the open questions together even across messages; a choice among options counts as one, but a numbered list of proposed changes counts each item, even when asked as one yes/no ("make changes 1–6?", "reply with numbers, all, or none", a 📚 lesson list). Not for a yes/no with nothing to look over, brief chat answers or reference files; show unfinished work only on an explicit preview request.'
 allowed-tools: Bash
 metadata:
-  version: 1.3.1
+  version: 1.5.2
 ---
 
 # inbox-for-human
@@ -22,14 +22,14 @@ Never resolve the word "inbox" to a filesystem path — not even if a `find` tur
 
 Three or more questions or decisions open for the user now also enter the review flow. Count them together before choosing which to ask, even across messages; a choice among options counts as one, but a numbered list of proposed changes counts each item, even when asked as one yes/no ("make changes 1–6?", "reply with numbers, all, or none", a 📚 lesson list). Prepare one page with one part per question, using `human-feedback` when installed, then queue it. Older ticket or skill wording asking for chat does not override this trigger; the user’s explicit request for chat does. One or two brief questions stay in chat unless another review trigger applies.
 
-The description above is the auto-invocation matching surface. It covers review or choice requests, requests to see work such as “Show me what it looks like now”, and finished documents or visual deliverables made for the user, including printable checklists. Naming the inbox also loads it. When `human-feedback` is installed it fires alongside this skill: the same work gets both. Once loaded, three **modes** govern what the agent does: enqueue, announce, and show. Each mode has an entry trigger, a behavior while in it, and an exit condition. Check the mode at every subsequent action. An unfinished draft doesn't enter these modes just because it was saved.
+The description above is the auto-invocation matching surface. It covers review or choice requests, requests to see work such as “Show me what it looks like now”, and finished documents or visual deliverables made for the user, including printable checklists. Naming the inbox also loads it. When `human-feedback` is installed it fires alongside this skill: the same work gets both. Once loaded, three **modes** govern what the agent does: enqueue, announce, and show. Each mode has an entry trigger, a behavior while in it, and an exit condition. An unfinished draft doesn't enter these modes just because it was saved.
 
 ## Enqueue mode
 
 Before entering: when the work belongs on a notes page and `human-feedback` is in your available-skills list, load it and finish/check its held page first. Use an already prepared notes page instead of creating another. Enqueue that page, keeping the original document as its source; don't enqueue the source and then a second preview for the same handoff.
 
 - **Enter:** you're asking the user to review, approve or choose from the file, they asked to see or review it or named their inbox, you finished a document or visual deliverable for them. Prepare and check the deliverable before entering; an unfinished save alone doesn't enter. A deliverable with a notes page → enqueue that page once it's ready. A new version of that page → enqueue it with `--supersedes` naming the last one.
-- **Behavior while in mode:** no further user-facing text. No other tool calls except the enqueue command. Do not summarize, do not ask, do not continue work — the only valid next step is the enqueue.
+- **Behavior while in mode:** run the enqueue command before any other tool call or user-facing text. The 📥 line follows in Announce mode.
 - **Exit:** enqueue.py returns exit code 0.
 
 If enqueue.py prints a line starting `Note:` (Raycast isn't installed, or this isn't a Mac), pass it on to the user word for word, after the announce line below. Pass each note on only once a session, even when the script prints it again.
@@ -55,22 +55,24 @@ python3 "$SKILL_DIR/scripts/enqueue.py" \
 ## Announce mode
 
 - **Enter:** enqueue.py exits 0.
-- **Behavior while in mode:** the literal next user-facing text in this turn must contain a line in this **exact** format, one line per file enqueued:
+- **Behavior while in mode:** the literal next user-facing text in this turn must be this **exact** two-line format, once per file enqueued:
 
   ```
-  🍪 **Added to Inbox for Human:** <absolute-path> — <one-line context, ≤80 chars> ([open](<obsidian-url>))
+  📥 **Added to Inbox-for-Human: [<title>](<link>)** (<file name>)
+  <ask>
   ```
 
-  Required elements, all literal: the 🍪 cookie, the `**Added to Inbox for Human:**` bolded prefix (with the colon inside the bold), the absolute path, a space + em-dash (`—`, U+2014) + space, and the context.
+  Required elements, all literal: the 📥, the bolded `Added to Inbox-for-Human: ` with the linked title inside the bold, then the file name with its extension in parentheses. `<title>` is the `--context` you passed, 80 characters or less. `<ask>` is the `--ask` you passed, word for word, with no quotes or parentheses around it. No path and no command.
 
-  **The trailing `([open](<obsidian-url>))` makes the file reachable in one click**, which a bare path in a terminal is not. Do not build that URL by hand: `enqueue.py` prints it as its own `Obsidian: obsidian://…` output line whenever the file sits inside a vault, already URL-encoded and already pointed at the right vault (a nested vault wins over the one above it). Copy that URL across verbatim. When the script prints no `Obsidian:` line the file is outside every vault, so omit the parenthetical entirely and leave the rest of the line exactly as it is — the link is additive, and the compliance form above stands with or without it. For an HTML page, use the link your project's instructions give for a local page (a preview server's localhost URL), else its `file://` URL: `([open](<url>))`. Never a bare URL, which wraps across lines and doesn't click.
-  For each `Superseded:` line enqueue.py prints, add `🗄️ **Archived from Inbox:** <its context>` right after the cookie line.
+  **The link makes the file reachable in one click**, which a bare path in a terminal is not. Do not build that URL by hand: `enqueue.py` prints it as its own `Obsidian: obsidian://…` output line whenever the file sits inside a vault, already URL-encoded and already pointed at the right vault (a nested vault wins over the one above it). Copy that URL across verbatim. For an HTML page, use the link your project's instructions give for a local page (a preview server's localhost URL), else its `file://` URL. When the script prints no `Obsidian:` line and the file isn't an HTML page, write the title without a link and leave the rest of the format as it is. Never a bare URL, which wraps across lines and doesn't click.
+
+  For each `Superseded:` line enqueue.py prints, add `🗄️ **Archived from Inbox:** <its context>` right after that.
 - **Exit:** the line above is emitted.
 
-This is not "include the cookie line somewhere in your response." It is "the cookie line is the first text the user sees after the enqueue runs." If you have already emitted user-facing text earlier in the turn, the cookie line is still the next text after enqueue.py succeeds.
+This is not "include the inbox line somewhere in your response." It is "the inbox line is the first text the user sees after the enqueue runs." If you have already emitted user-facing text earlier in the turn, the inbox line is still the next text after enqueue.py succeeds.
 
-Wrong order: enqueue → ask "what's next?" → user answers → announce 🍪.
-Right order: enqueue → 🍪 announce → then continue.
+Wrong order: enqueue → ask "what's next?" → user answers → announce 📥.
+Right order: enqueue → 📥 announce → then continue.
 
 ## Show mode
 

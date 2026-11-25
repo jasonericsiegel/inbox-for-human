@@ -6,9 +6,11 @@ inbox-for-human is a free skill for Claude Code, Codex, and other AI agents, wit
 npx skills add jasonericsiegel/inbox-for-human
 ```
 
-Then get the [Inbox for Human extension](https://www.raycast.com/jasoneric/inbox-for-human) from the Raycast Store.
+Then get the [Inbox for Human extension](https://www.raycast.com/jasoneric/inbox-for-human?via=jasoneric) from the Raycast Store.
 
-![Review Inbox for Human in Raycast, with a plan, a page of mockups, an email draft and a report waiting](media/review-inbox-for-human.png)
+See it in action at [jasoneric.com/inbox-for-human](https://jasoneric.com/inbox-for-human/).
+
+![Review Inbox for Human in Raycast, with a trip plan, a homepage picture, a launch plan and a spreadsheet waiting](media/review-inbox-for-human.png)
 
 ## How it works
 
@@ -32,7 +34,7 @@ Quick answers stay in chat.
 
 You need:
 
-- A Mac with [Raycast](https://raycast.com/?via=jasoneric) (affiliate link). Your inbox lives in Raycast.
+- A Mac with [Raycast](https://raycast.com/?via=jasoneric). Your inbox lives in Raycast.
 - Your agent running on your Mac, so it can add files there.
 - Python 3. Most Macs with Claude Code or Codex already have it. If yours doesn't, macOS offers to install it the first time the skill runs.
 
@@ -46,7 +48,7 @@ You need:
 
 ## Install
 
-1. Get [Inbox for Human from the Raycast Store](https://www.raycast.com/jasoneric/inbox-for-human).
+1. Get [Inbox for Human from the Raycast Store](https://www.raycast.com/jasoneric/inbox-for-human?via=jasoneric).
 2. Open your agent:
    - **Claude desktop app:** open the **Code** tab, choose a folder to work in (Documents is fine), and keep the session on **Local**.
    - **ChatGPT desktop app:** switch to **Codex** at the top of the window, choose a folder, and keep it on **Local**.

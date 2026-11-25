@@ -51,7 +51,7 @@ FIRST_RUN_ADVISORY = (
     "Note: Inbox for Human shows your inbox in Raycast, which isn't on "
     "this Mac. Get Raycast at https://raycast.com/?via=jasoneric, then "
     "the Inbox for Human extension at "
-    "https://www.raycast.com/jasoneric/inbox-for-human. "
+    "https://www.raycast.com/jasoneric/inbox-for-human?via=jasoneric. "
     "(This note won't repeat.)"
 )
 
